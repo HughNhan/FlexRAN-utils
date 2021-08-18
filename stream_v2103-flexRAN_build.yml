@@ -5,7 +5,7 @@
   tasks:
   - name: set env
     set_fact:
-        begin: 0
+        begin: 14
         end: 20
 
   - block:
@@ -114,9 +114,9 @@
 
 # Phase4 - Enable powertools repo for RHEL8
   - block:
-    - name: Enable power tool repo
-      command: subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
-        
+    #- name: Enable power tool repo
+    #  command: subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+    #    
     - name: ensure nfs-utils present
       yum: name=nfs-utils state=present
 
@@ -254,6 +254,10 @@
 # Build DPDK
 #
   - block:
+    #dnf --enablerepo=powertools install meson
+    - name: enable powertool repo
+      command: dnf --enablerepo=powertools install meson
+
     - name: Install meson for DPDK build
       package: 
         name:
