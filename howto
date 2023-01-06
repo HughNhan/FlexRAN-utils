@@ -46,17 +46,15 @@
         FlexRAN-22.03-L1.tar.gz_part00  
         FlexRAN-22.03-L1.tar.gz_part01
 
- step 3: build - run oneapi-step.sh to build. See ./oneapi-step.sh
-        [root@perf154 22-03] cd /opt
-        [root@perf154 22-03] oneapi-step.sh -f1 -t2
+step 3: populate testmac makefile patch 
+    cp testmac.patch  /opt
+
     Note: l_BaseKit_p_2022.3.1.17310_offline.sh build may fail 
-          at step 3 or 4 w/o makefile patch. So go to step 4
+          at step 3 or 4 w/o makefile patch.
 
- step 4: apply makefile patch 
-       See flexran-build-nr5g-gnb-testmac-makefile.diff
-
- step 5: continue with the build
-        [root@perf154 22-03] oneapi-step.sh -f3 -t 10
+ step 4: build - run oneapi-step.sh to build. See ./oneapi-step.sh
+        [root@perf154 22-03] cd /opt
+        [root@perf154 22-03] oneapi-step.sh 
 
 4.0 How to build FlexRAN based container image
 [root@perf154 ]# cd /opt
