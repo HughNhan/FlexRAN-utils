@@ -1,0 +1,93 @@
+<<<<  TOC  >>>>
+
+1.0 How to build FlexRAN from scratch
+2.0 How to install oneAPI toolkit
+3.0 How to build 22.03 FlexRAN SDK
+4.0 How to build FlexRAN based container image
+5.0 How to build bench-flexran from based image
+6.0 How to build SNO
+7.0 How to provision SNO for flexran
+8.0 How to run bench-flex-ran
+   Timer mode s/w FEC mode
+   Timer mode ACC100 FEC mode
+   XRAN s/w FEC mode
+   XRAN ACC100 FEC mode
+
+<<<<  /TOC  >>>>>>
+
+1.0 How to build FlexRAN from scratch
+    On a build machine i.e perf154
+    step 1: install oneAPI Base Toolkit
+    step 2: download FlexRAN 22.03 parts
+    step 3: download DPDK 22.03 patch
+    step 4: build FlexRAN using oneapi-step.sh
+
+2.0 How to install oneAPI toolkit
+        Reference: https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html?operatingsystem=linux&distributions=offline
+        Note: we build from /opt
+
+        [root@perf154]# mkdir -p /home/oneAPI-OPT &&  ln -s  /home/oneAPI-OPT /opt && cd /opt
+        [root@perf154 ]# 
+            $ wget https://registrationcenter-download.intel.com/akdlm/irc_nas/18970/l_BaseKit_p_2022.3.1.17310_offline.sh
+            $ chmod +x ./l_BaseKit_p_2022.3.1.17310_offline.sh
+            $ bash l_BaseKit_p_2022.3.1.17310_offline.sh -a -s --eula accept
+
+            Note: may need 'yum install kernel-devel'
+
+3.0 How to build 22.03 FlexRAN SDK
+ step 1: Download FLEXRAN SDK
+        Download from my Intel Developer account 
+           from: https://www.intel.com/content/www/us/en/developer/topic-technology/edge-5g/tools/flexran-documentation.html?wapkw=flexran&s=Newest
+        or from my coworker gdrive: https://drive.google.com/drive/folders/xxx
+
+ step 2: stage files at STAGE_DIR defined in oneapi-step.sh
+        [root@perf154 22-03]# mkdir -p /home/user/Intel-FlexRAN/22-03  && cd /home/user/Intel-FlexRAN/22-03
+        dpdk_patch-22.03.patch.zip 
+        FlexRAN-22.03-L1.tar.gz_part00  
+        FlexRAN-22.03-L1.tar.gz_part01
+
+ step 3: build - run oneapi-step.sh to build. See ./oneapi-step.sh
+        [root@perf154 22-03] cd /opt
+        [root@perf154 22-03] oneapi-step.sh -f1 -t2
+    Note: l_BaseKit_p_2022.3.1.17310_offline.sh build may fail 
+          at step 3 or 4 w/o makefile patch. So go to step 4
+
+ step 4: apply makefile patch 
+       See flexran-build-nr5g-gnb-testmac-makefile.diff
+
+ step 5: continue with the build
+        [root@perf154 22-03] oneapi-step.sh -f3 -t 10
+
+4.0 How to build FlexRAN based container image
+[root@perf154 ]# cd /opt
+   podman build -f Dockerfile -t quay.io/user/flexran:flexran-oneapi-base .
+   podman push                   quay.io/user/flexran:flexran-oneapi-base 
+
+5.0 How to build bench-flexran image from FlexRAN based image
+ Assumptions:
+ 1. Based image is: quay.io/user/flexran:flexran-oneapi-base 
+ 2. Rickshaw
+    /opt/crucible/repos/https:github.com:perftool-incubator/rickshaw/userenvs/stream8-flexran.json
+
+ During run.sh, rickshaw builds client-server image.
+
+6.0 How to build SNO
+    Jetlag
+    [root@perf154 new-jetlag-perf198]#
+    /root/WS/new-jetlag-perf198
+    ansible-playbook -i inventory-perf198-sno ansible/setup-bastion.yml 
+    ansible-playbook -i inventory-perf198-sno ansible/setup-bastion.yml
+
+7.0 How to provision SNO for flexran
+   /opt/crucible/repos/https:github.com:perftool-incubator/bench-flexran/script-dir/{03*,09*}
+
+8.0 How to run bench-flexran
+   Timer mode s/w FEC mode
+        /home/user/crucible-examples/flexran/ACC100/TIMER-SW/
+   Timer mode ACC100 FEC mode
+        /home/user/crucible-examples/flexran/ACC100/TIMER-FEC/
+   XRAN s/w FEC mode
+        /home/user/crucible-examples/flexran/ACC100/XRAN-SW/
+   XRAN ACC100 FEC mode
+        /home/user/crucible-examples/flexran/ACC100/XRAN-FEC/
+

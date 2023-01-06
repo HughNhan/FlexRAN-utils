@@ -1,7 +1,0 @@
-[dev]
-#dhcp31-99.perf.lab.eng.bos.redhat.com
-#f03-h15-000-r640.rdu2.scalelab.redhat.com
-perf154.perf.lab.eng.bos.redhat.com
-
-[all:vars]
-ansible_python_interpreter=/usr/bin/python3
