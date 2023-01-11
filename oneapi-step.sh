@@ -3,6 +3,8 @@
 FROM=1
 TO=10
 
+
+# For debug by executing individual step(s) i.e 'bash this_script -fm -tn'
 while getopts f:t: flag
 do
     case "${flag}" in
@@ -11,13 +13,6 @@ do
     esac
 done
 
-echo range=$FROM-$TO
-
-
-PHASE=1
-
-NEW_INSTALL=false
-DPDK_REUSE=true
 
 STAGE_DIR=/home/hnhan/Intel-FlexRAN/22-03
 
@@ -27,10 +22,10 @@ DPDK_PATCH=$STAGE_DIR/dpdk_patch-22.03.patch
 FLEXRAN_TAR_BALL=$STAGE_DIR/FlexRAN-22.03.tar.gz
 
 source /opt/intel/oneapi/setvars.sh 
-export PATH=/opt/intel/oneapi/compiler/2022.2.1/linux/bin-llvm:$PATH
+export PATH=/opt/intel/oneapi/compiler/2023.0.0/linux/bin-llvm:$PATH
 
-# Assuming we have download 22.03 contents to STAGE_DIR
-# Preprocess staeqd files i.e unzip, concat if necessary
+# Assuming we have downloaded FlexRAN SDK contents to STAGE_DIR
+# Preprocess staged files i.e unzip, concat if necessary
 cd $STAGE_DIR
 if [ ! -e dpdk_patch-22.03.patch ]; then
     unzip dpdk_patch-22.03.patch
@@ -46,15 +41,10 @@ if [  $FROM -le 1  ] &&  [ $TO -ge 1 ]; then
   rm -fr dpdk-21.11
   wget -O dpdk-21.11.tar.gz https://fast.dpdk.org/rel/dpdk-21.11.tar.gz && tar xzvf dpdk-21.11.tar.gz  
   cd dpdk-21.11 &&  patch -p1 < $DPDK_PATCH
-
-  # use oneAPI ready at /opt/intel
-  echo use existing oneAPI
-  #ln -s /home/opt/intel  /opt/intel
-
 fi
 
 if [  $FROM -le 2  ] &&  [ $TO -ge 2 ]; then
-# unpack the new 22.03 FlexRAN tar ball
+# unpack the new FlexRAN tar ball
 rm -rf /opt/flexran && cd /opt && mkdir -p flexran && tar zxvf ${FLEXRAN_TAR_BALL} -C flexran/
 cd /opt/flexran && expect <<END_EXPECT
 set timeout 300
@@ -81,7 +71,7 @@ END_EXPECT
 # if above expect step fails, try it manually: cd /opt/flexran && source ./set_env_var.sh -d
 fi
 
-# step 2
+# step 4
 cd /opt/flexran && source ./set_env_var.sh -d -x icx
 if [  $FROM -le 4  ] &&  [ $TO -ge 4 ]; then
  #cd /opt/flexran && source ./set_env_var.sh -d -x icx #moved outside if to support rerun
@@ -94,7 +84,7 @@ if [  $FROM -le 4  ] &&  [ $TO -ge 4 ]; then
  pip3 install pyelftools
 fi
 
-# step 3
+# step 5
 if [  $FROM -le 5  ] &&  [ $TO -ge 5 ]; then
  cd /opt/flexran 
  #source ./set_env_var.sh 
@@ -104,7 +94,7 @@ if [  $FROM -le 5  ] &&  [ $TO -ge 5 ]; then
 fi
 export MESON_BUILD=1
 
-# if we have a testmac patch, and had not patch, path now
+# if we have a testmac patch, and had not patched, patch now
 if [ -e /opt/testmac.patch ]; then
     pushd /opt/flexran/build/nr5g/gnb/testmac
     if [ ! -e ./testmac.patch ]; then
@@ -114,8 +104,8 @@ if [ -e /opt/testmac.patch ]; then
     popd
 fi
 
+#step 6
 if [  $FROM -le 6  ] &&  [ $TO -ge 6 ]; then
-#step 4
  # Attention New: "5gnr", no '-m' means '-m all'
  # cd /opt/flexran && ./flexran_build.sh -e -r 5gnr  <== before reading
 
@@ -123,7 +113,7 @@ if [  $FROM -le 6  ] &&  [ $TO -ge 6 ]; then
 
 fi  
 
-#step 5
+#step 7
 if [  $FROM -le 7  ] &&  [ $TO -ge 7 ]; then
  # Atterntion New: build Sample app
  #cd /opt/flexran && source ./set_env_var.sh -d -x icx
@@ -134,4 +124,34 @@ if [  $FROM -le 7  ] &&  [ $TO -ge 7 ]; then
  cd /opt/flexran/xran && ./build.sh SAMPLEAPP xclean &&  ./build.sh SAMPLEAPP
 fi
 
+SDK_ENV=/opt/sdk.env
+gen_sdk_env () {
+    # Collect env variables from ./set_env_var.sh outputs
+
+    echo "#" `basename "$0"` generated env > $SDK_ENV
+    pushd /opt/flexran
+    echo "export FLEXRAN_ROOT=/opt/flexran" >> $SDK_ENV
+
+    source ./set_env_var.sh -d -x icx |  sed -n '/Envi/,//p' | grep -v "==\|Envi" | awk  -F= '{print "export " $0}' >> $SDK_ENV
+    # sed 
+    #   -n skip until "Envi"
+    #    p then print
+    # grep 
+    #    ignore lines with pattern "==" and "Envi"
+    # awk
+    #    add "export " in front of lines
+
+    echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${FLEXRAN_ROOT}/icx_libs:${FLEXRAN_ROOT}/wls_mod:${FLEXRAN_ROOT}/libs/cpa/bin'  >> $SDK_ENV
+    # LD_LIBRARY_PATH should have been done in Dockerfile, but the remotehost's chroot env 
+    # cannot inherit Dockerfile's ENV settings.
+
+    popd 
+}
+
+# And lastly
+if [  $FROM -le 8  ] &&  [ $TO -ge 8 ]; then
+  gen_sdk_env
+fi
+
+# That's all folks
 
