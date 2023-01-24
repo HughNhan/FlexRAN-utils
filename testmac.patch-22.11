@@ -1,0 +1,14 @@
+diff --git a/makefile b/makefile
+index 098425b..fc64eb7 100644
+--- a/makefile
++++ b/makefile
+@@ -142,7 +142,7 @@ DEFS := $(DEFS) XRAN_TIMING_ADAPT
+ endif
+ 
+ DEFS := $(addprefix -D,$(DEFS))
+-CFLAGS := -O0 -g -Wall -Wno-deprecated-declarations -Wimplicit-function-declaration -fasm-blocks -mcmodel=large $(DEFS) $(INC) -I $(RTE_INC) $(TARGET_PROCESSOR) #-DDPDKIO_DEBUG
++CFLAGS := -O0 -g -Wall -Wno-unused-command-line-argument -Wno-deprecated-declarations -Wimplicit-function-declaration -fasm-blocks -mcmodel=large $(DEFS) $(INC) -I $(RTE_INC) $(TARGET_PROCESSOR) #-DDPDKIO_DEBUG
+ 
+ ifeq ($(PRINTDBG),)
+ CFLAGS := $(CFLAGS) -Werror
+
